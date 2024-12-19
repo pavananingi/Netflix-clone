@@ -1,4 +1,4 @@
-name: Build
+name: Build and Deploy
 
 on:
   push:
@@ -6,8 +6,8 @@ on:
       - main
 
 jobs:
-  build:
-    name: Build
+  build-analyze-scan:
+    name: Build, Analyze, and Scan
     runs-on: ubuntu-latest
     steps:
       # Step 1: Checkout the repository
@@ -51,3 +51,19 @@ jobs:
           docker push pavan9505/netflix:latest
         env:
           DOCKER_CLI_ACI: 1
+
+  deploy:
+    needs: build-analyze-scan
+    runs-on: [aws-netflix]
+    steps:
+      # Step 1: Pull the Docker image
+      - name: Pull the Docker Image
+        run: docker pull pavan9505/netflix:latest
+
+      # Step 2: Trivy Image Scan
+      - name: Trivy Image Scan
+        run: trivy image pavan9505/netflix:latest
+
+      # Step 3: Run the Container
+      - name: Run the Container Netflix
+        run: docker run -d --name netflix -p 8081:80 pavan9505/netflix:latest
